@@ -79,6 +79,8 @@ settlement, err := ctx.Settle(plugin.WalletSettlement{
 
 声明 `plugin.kv.read` 或 `plugin.kv.write` 后可使用 `KVGet`、`KVPut`、`KVDelete`。KV 自动按用户和插件 ID 隔离。日志可通过 `ctx.Log` 写入 community 的插件日志库。
 
+声明 `plugin.settings.global` 后，配置会存为插件全局配置：所有用户读取同一份值，只有管理员可以修改。适合奖池、活动规则等平台级设置。
+
 ## 前端声明
 
 `Page`、`Card`、`Form`、`Input`、`Button` 等 helper 会生成当前 Web 前端支持的声明式页面结构。更复杂的节点仍可以直接使用 `map[string]any`。

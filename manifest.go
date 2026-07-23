@@ -3,11 +3,12 @@ package pluginhelper
 import "encoding/json"
 
 const (
-	PermissionWalletBalanceRead   = "wallet.balance.read"
-	PermissionWalletBalanceDebit  = "wallet.balance.debit"
-	PermissionWalletBalanceCredit = "wallet.balance.credit"
-	PermissionPluginKVRead        = "plugin.kv.read"
-	PermissionPluginKVWrite       = "plugin.kv.write"
+	PermissionWalletBalanceRead    = "wallet.balance.read"
+	PermissionWalletBalanceDebit   = "wallet.balance.debit"
+	PermissionWalletBalanceCredit  = "wallet.balance.credit"
+	PermissionPluginKVRead         = "plugin.kv.read"
+	PermissionPluginKVWrite        = "plugin.kv.write"
+	PermissionPluginSettingsGlobal = "plugin.settings.global"
 
 	HookAppBoot                      = "app.boot"
 	HookAdvancedChatRuntimeExtension = "advanced_chat.runtime_extension"
