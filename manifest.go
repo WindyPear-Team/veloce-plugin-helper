@@ -9,6 +9,7 @@ const (
 	PermissionPluginKVRead         = "plugin.kv.read"
 	PermissionPluginKVWrite        = "plugin.kv.write"
 	PermissionPluginSettingsGlobal = "plugin.settings.global"
+	PermissionPluginChannelHTTP    = "plugin.channel.http"
 
 	HookAppBoot                      = "app.boot"
 	HookAdvancedChatRuntimeExtension = "advanced_chat.runtime_extension"
@@ -35,6 +36,7 @@ type Manifest struct {
 	Hooks       []Hook         `json:"hooks,omitempty"`
 	Frontend    Frontend       `json:"frontend,omitempty"`
 	Settings    SettingsSchema `json:"settings,omitempty"`
+	Channels    []ChannelType  `json:"channels,omitempty"`
 }
 
 type Hook struct {
@@ -92,6 +94,18 @@ type SettingsField struct {
 type SelectOption struct {
 	Label string `json:"label"`
 	Value string `json:"value"`
+}
+
+// ChannelType declares a message-channel provider implemented by this plugin.
+// InboundAction parses inbound webhooks; SendAction delivers generated replies.
+// Config describes the per-integration connection settings shown in the Web UI.
+type ChannelType struct {
+	ID            string         `json:"id"`
+	Name          string         `json:"name"`
+	Description   string         `json:"description,omitempty"`
+	InboundAction string         `json:"inbound_action,omitempty"`
+	SendAction    string         `json:"send_action,omitempty"`
+	Config        SettingsSchema `json:"config,omitempty"`
 }
 
 func (m Manifest) JSON() []byte {

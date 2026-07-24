@@ -50,6 +50,19 @@ type WalletSettlementResult struct {
 	Metadata      map[string]any
 }
 
+type HTTPRequest struct {
+	Method  string            `json:"method,omitempty"`
+	URL     string            `json:"url"`
+	Headers map[string]string `json:"headers,omitempty"`
+	Body    string            `json:"body,omitempty"`
+}
+
+type HTTPResponse struct {
+	Status  int               `json:"status"`
+	Headers map[string]string `json:"headers"`
+	Body    string            `json:"body"`
+}
+
 func NewClient(userID uint) *Client { return &Client{UserID: userID} }
 
 func (c *Client) Balance(ctx context.Context) (Balance, error) {
@@ -137,6 +150,19 @@ func (c *Client) KVDelete(ctx context.Context, key string) error {
 
 func (c *Client) Log(ctx context.Context, level, message string, metadata any) error {
 	return c.call(ctx, "plugin.log", map[string]any{"level": level, "message": message, "metadata": metadata}, nil)
+}
+
+// HTTP performs a bounded HTTP request through the host. Channel plugins use
+// this to call their provider's send-message API after declaring
+// PermissionPluginChannelHTTP.
+func (c *Client) HTTP(ctx context.Context, request HTTPRequest) (HTTPResponse, error) {
+	var response HTTPResponse
+	if err := c.call(ctx, "plugin.channel.http", map[string]any{
+		"method": request.Method, "url": request.URL, "headers": request.Headers, "body": request.Body,
+	}, &response); err != nil {
+		return HTTPResponse{}, err
+	}
+	return response, nil
 }
 
 func (c *Client) call(ctx context.Context, operation string, request map[string]any, destination any) error {

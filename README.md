@@ -85,6 +85,25 @@ settlement, err := ctx.Settle(plugin.WalletSettlement{
 
 `Page`、`Card`、`Form`、`Input`、`Button` 等 helper 会生成当前 Web 前端支持的声明式页面结构。更复杂的节点仍可以直接使用 `map[string]any`。
 
+## 自定义消息渠道
+
+在 manifest 中声明 `Channels` 后，该渠道类型会出现在消息渠道页面。平台负责 Webhook 密钥校验、消息归档、上下文和模型调用；插件只需实现入站解析和出站投递：
+
+```go
+Channels: []plugin.ChannelType{{
+    ID: "acme", Name: "Acme Chat",
+    InboundAction: "channel.inbound",
+    SendAction: "channel.send",
+    Config: plugin.SettingsSchema{Fields: []plugin.SettingsField{
+        {Type: "input", Name: "base_url", Label: "API 地址"},
+        {Type: "secret", Name: "token", Label: "访问令牌"},
+    }},
+}},
+Permissions: []string{plugin.PermissionPluginChannelHTTP},
+```
+
+`channel.inbound` 中使用 `ctx.ChannelInbound()` 读取原始 Webhook，并返回 `external_chat_id`、`external_user_id`、`external_message_id`、`external_user_name` 和 `content`。`channel.send` 中使用 `ctx.ChannelOutbound()` 获取生成的回复；需要调用渠道 API 时使用 `ctx.Host.HTTP`。
+
 ## 注意事项
 
 - 插件只能调用 manifest 声明并且 community 认可的宿主能力，不能直接访问数据库或网络。

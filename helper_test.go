@@ -10,13 +10,17 @@ func TestValuesAndManifest(t *testing.T) {
 	if values.String("name", "") != "Veloce" || !values.Bool("enabled", false) || values.Int("count", 0) != 3 {
 		t.Fatalf("unexpected values: %#v", values)
 	}
-	manifest := Manifest{ID: "test-plugin", Name: "Test", Version: "1.0.0", Permissions: []string{PermissionPluginKVRead}}
+	manifest := Manifest{ID: "test-plugin", Name: "Test", Version: "1.0.0", Permissions: []string{PermissionPluginKVRead}, Channels: []ChannelType{{ID: "acme", Name: "Acme", InboundAction: "channel.inbound", SendAction: "channel.send"}}}
 	var decoded map[string]any
 	if err := json.Unmarshal(manifest.JSON(), &decoded); err != nil {
 		t.Fatal(err)
 	}
 	if decoded["id"] != "test-plugin" {
 		t.Fatalf("manifest = %#v", decoded)
+	}
+	channels, ok := decoded["channels"].([]any)
+	if !ok || len(channels) != 1 {
+		t.Fatalf("channels = %#v", decoded["channels"])
 	}
 }
 

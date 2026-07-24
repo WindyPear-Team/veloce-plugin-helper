@@ -37,6 +37,51 @@ type ActionContext struct {
 	Host      *Client
 }
 
+// ChannelInbound returns the inbound payload supplied to a declared custom
+// channel's InboundAction.
+func (c *ActionContext) ChannelInbound() (ChannelInbound, error) {
+	var inbound ChannelInbound
+	if err := decodeActionPayload(c.Payload, &inbound); err != nil {
+		return ChannelInbound{}, err
+	}
+	return inbound, nil
+}
+
+// ChannelOutbound returns the delivery payload supplied to a declared custom
+// channel's SendAction.
+func (c *ActionContext) ChannelOutbound() (ChannelOutbound, error) {
+	var outbound ChannelOutbound
+	if err := decodeActionPayload(c.Payload, &outbound); err != nil {
+		return ChannelOutbound{}, err
+	}
+	return outbound, nil
+}
+
+type ChannelConnection struct {
+	Provider      string `json:"provider"`
+	TypeID        string `json:"type_id"`
+	IntegrationID uint   `json:"integration_id"`
+	Name          string `json:"name"`
+	Config        Values `json:"config"`
+	BotToken      string `json:"bot_token,omitempty"`
+}
+
+type ChannelInbound struct {
+	Channel ChannelConnection `json:"channel"`
+	Method  string            `json:"method"`
+	Headers map[string]string `json:"headers"`
+	Body    string            `json:"body"`
+}
+
+type ChannelOutbound struct {
+	Channel              ChannelConnection `json:"channel"`
+	ExternalChatID       string            `json:"external_chat_id"`
+	ExternalUserID       string            `json:"external_user_id,omitempty"`
+	ExternalMessageID    string            `json:"external_message_id,omitempty"`
+	InboundPayload       string            `json:"inbound_payload,omitempty"`
+	Content              string            `json:"content"`
+}
+
 func (c *ActionContext) Balance() (Balance, error) {
 	return c.Host.Balance(c)
 }
@@ -185,6 +230,14 @@ func (p *Plugin) ExportHook() {
 }
 
 func hookKey(point, action string) string { return point + "\x00" + action }
+
+func decodeActionPayload(payload map[string]any, destination any) error {
+	raw, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(raw, destination)
+}
 
 func readJSON(destination any) error {
 	raw, err := io.ReadAll(io.LimitReader(os.Stdin, 1<<20))
