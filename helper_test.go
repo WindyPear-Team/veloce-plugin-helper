@@ -38,3 +38,35 @@ func TestSecureIndex(t *testing.T) {
 		t.Fatal("expected invalid length error")
 	}
 }
+
+func TestUpstreamHelpers(t *testing.T) {
+	manifest := Manifest{ID: "test-plugin", Name: "Test", Version: "1.0.0", Upstreams: []UpstreamType{{
+		ID: "test", Name: "Test upstream", Protocol: UpstreamProtocolResponses, PrepareAction: "upstream.prepare",
+		Config: SettingsSchema{Fields: []SettingsField{{Type: "select", Name: "pool_id", Label: "Pool", Required: true, OptionsFrom: "pools", OptionLabel: "name", OptionValue: "id"}}},
+	}}}
+	var document map[string]any
+	if err := json.Unmarshal(manifest.JSON(), &document); err != nil {
+		t.Fatal(err)
+	}
+	upstreams, ok := document["upstreams"].([]any)
+	if !ok || len(upstreams) != 1 {
+		t.Fatalf("upstreams = %#v", document["upstreams"])
+	}
+
+	ctx := &ActionContext{Values: map[string]any{"channel": map[string]any{"id": float64(2), "base_url": "https://example.com", "config": map[string]any{"pool_id": "shared"}}, "request": map[string]any{"payload": map[string]any{"model": "test"}, "stream": true}}}
+	invocation, err := ctx.Upstream()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if invocation.Channel.ID != 2 || invocation.Channel.Config.String("pool_id", "") != "shared" || !invocation.Request.Stream {
+		t.Fatalf("invocation = %#v", invocation)
+	}
+	request, err := JSONPostRequest(" https://example.com/v1/responses ", map[string]any{"model": "test"}, map[string]string{"Accept": "application/json"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := UpstreamRequestResult(request).WithSettingsPatch(map[string]any{"pools": []any{}})
+	if result.Request == nil || result.Request.Method != "POST" || result.Request.Headers["Content-Type"] != "application/json" || result.SettingsPatch == nil {
+		t.Fatalf("result = %#v", result)
+	}
+}

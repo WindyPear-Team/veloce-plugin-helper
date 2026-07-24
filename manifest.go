@@ -37,6 +37,7 @@ type Manifest struct {
 	Frontend    Frontend       `json:"frontend,omitempty"`
 	Settings    SettingsSchema `json:"settings,omitempty"`
 	Channels    []ChannelType  `json:"channels,omitempty"`
+	Upstreams   []UpstreamType `json:"upstreams,omitempty"`
 }
 
 type Hook struct {
@@ -85,6 +86,9 @@ type SettingsField struct {
 	Required    bool           `json:"required,omitempty"`
 	Default     any            `json:"default,omitempty"`
 	Options     []SelectOption `json:"options,omitempty"`
+	OptionsFrom string         `json:"options_from,omitempty"`
+	OptionLabel string         `json:"option_label,omitempty"`
+	OptionValue string         `json:"option_value,omitempty"`
 	Min         any            `json:"min,omitempty"`
 	Max         any            `json:"max,omitempty"`
 	Step        any            `json:"step,omitempty"`
@@ -106,6 +110,21 @@ type ChannelType struct {
 	InboundAction string         `json:"inbound_action,omitempty"`
 	SendAction    string         `json:"send_action,omitempty"`
 	Config        SettingsSchema `json:"config,omitempty"`
+}
+
+const UpstreamProtocolResponses = "responses"
+
+// UpstreamType declares an OpenAI Responses-compatible upstream implemented
+// by this WASM plugin. Config is stored on each upstream channel instance.
+type UpstreamType struct {
+	ID             string         `json:"id"`
+	Name           string         `json:"name"`
+	Description    string         `json:"description,omitempty"`
+	Protocol       string         `json:"protocol"`
+	DefaultBaseURL string         `json:"default_base_url,omitempty"`
+	PrepareAction  string         `json:"prepare_action"`
+	RefreshAction  string         `json:"refresh_action,omitempty"`
+	Config         SettingsSchema `json:"config,omitempty"`
 }
 
 func (m Manifest) JSON() []byte {

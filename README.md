@@ -85,6 +85,49 @@ settlement, err := ctx.Settle(plugin.WalletSettlement{
 
 `Page`、`Card`、`Form`、`Input`、`Button` 等 helper 会生成当前 Web 前端支持的声明式页面结构。更复杂的节点仍可以直接使用 `map[string]any`。
 
+## 自定义上游渠道
+
+通过 `Upstreams` 可以声明一个由 WASM 处理的 OpenAI Responses 上游。平台会把渠道的 Base URL、API Key、`Config` 以及标准化的 Responses 请求交给 action；插件只需要解析 `ctx.Upstream()` 并返回 `JSONPostRequest`。
+
+```go
+var app = plugin.New(plugin.Manifest{
+    ID: "my-provider",
+    Name: "My Provider",
+    Version: "0.0.3",
+    Permissions: []string{plugin.PermissionPluginSettingsGlobal},
+    Upstreams: []plugin.UpstreamType{{
+        ID: "responses",
+        Name: "My Responses Provider",
+        Protocol: plugin.UpstreamProtocolResponses,
+        DefaultBaseURL: "https://api.example.com",
+        PrepareAction: "upstream.prepare",
+        RefreshAction: "upstream.refresh",
+        Config: plugin.SettingsSchema{Fields: []plugin.SettingsField{{
+            Type: "select", Name: "pool_id", Label: "账号池", Required: true,
+            OptionsFrom: "pools", OptionLabel: "name", OptionValue: "id",
+        }}},
+    }},
+})
+
+func init() {
+    app.Action("upstream.prepare", func(ctx *plugin.ActionContext) (any, error) {
+        upstream, err := ctx.Upstream()
+        if err != nil { return nil, err }
+        request, err := plugin.JSONPostRequest(
+            upstream.Channel.BaseURL+"/v1/responses",
+            upstream.Request.Payload,
+            map[string]string{"Authorization": "Bearer ..."},
+        )
+        if err != nil { return nil, err }
+        return plugin.UpstreamRequestResult(request), nil
+    })
+}
+```
+
+`SettingsField.OptionsFrom` 可将渠道字段的选项动态绑定到插件全局设置中的数组，例如 `pools`。`OptionLabel` 和 `OptionValue` 指定显示和值字段。
+
+刷新令牌后使用 `plugin.UpstreamRefreshResult().WithSettingsPatch(...)` 或 `plugin.UpstreamRequestResult(...).WithSettingsPatch(...)` 返回需要更新的全局设置。该能力要求 manifest 声明 `plugin.settings.global`；Community 只会合并 JSON 对象形式的 patch。
+
 ## 自定义消息渠道
 
 在 manifest 中声明 `Channels` 后，该渠道类型会出现在消息渠道页面。平台负责 Webhook 密钥校验、消息归档、上下文和模型调用；插件只需实现入站解析和出站投递：
